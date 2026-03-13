@@ -52,7 +52,13 @@ class GameDetailWindow(QWidget):
 
         grid_size = self.game_data.get('grid_size', 4)
         difficulty = self.game_data.get('difficulty', 'Unknown')
-        timer = self.game_data.get('timer', 'Unknown')
+        timer = self.game_data.get('timer', None)
+        if timer is None or timer == 'Unknown':
+            # Fallback: show time played in mm:ss format
+            time_played = self.game_data.get('time_played', 0)
+            minutes = time_played // 60
+            seconds = time_played % 60
+            timer = f"{minutes}:{seconds:02d} played"
 
         info_text = f"{formatted_time} • {grid_size}x{grid_size} Grid, {difficulty} mode, {timer}"
         info_label = QLabel(info_text)
