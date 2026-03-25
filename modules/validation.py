@@ -45,11 +45,12 @@ Key Attributes:
  - self.trie - _Trie instance built from difficulty-filtered word list
 
 Constants:
- - DIFFICULTY_THRESHOLDS - Maps difficulty string to minimum Zipf frequency score
-        - Easy:   > 5.00 (very common everyday words)
-        - Medium: > 4.00 (moderately common words)
-        - Hard:   > 3.10 (includes rarer but valid Boggle words)
+ - DIFFICULTY_THRESHOLDS - Maps difficulty string to a (low, high) Zipf frequency band
+        - Easy:   (4.00, 8.00) — very common everyday words
+        - Medium: (3.50, 5.50) — moderately common words
+        - Hard:   (3.00, 4.50) — includes rarer but valid Boggle words
         - Zipf scale runs 0-8; most known English words fall between 3 and 7
+        - Bands are exclusive of each other so each word belongs to exactly one difficulty
 
 Key Methods:
  - __init__(self, difficulty, dictionary_path, profanity_path):
@@ -68,27 +69,25 @@ Key Methods:
 
 WordValidator Class:
 Key Attributes:
- - self.trie - Reference to the _Trie built by PreProcessing
+ - self.trie - Unfiltered _Trie built from the full dictionary (Zipf > 3.0, profanity removed)
 
 Key Methods:
- - __init__(self, difficulty='Hard'):
-        - Delegates Trie construction entirely to PreProcessing
-        - Holds a reference to the resulting trie for use by DFS and other algorithms
- - set_difficulty(self, difficulty):
-        - Rebuilds the Trie via a new PreProcessing instance for the given difficulty
-        - Replaces self.trie so all consumers immediately use the new word set
+ - __init__(self, dictionary_path):
+        - Builds an unfiltered Trie accepting any word with Zipf > 3.0
+        - Used during gameplay — validates any word the player finds regardless of difficulty
+ - __load_dictionary(self, path, profanity_path):
+        - Loads profanity list into a set for O(1) lookup
+        - Inserts words into Trie if length >= 3, not banned, and Zipf > 3.0
  - is_valid_word(self, word):
         - Public interface checking if word exists in dictionary
  - is_valid_prefix(self, prefix):
         - Public interface checking if prefix exists in dictionary
 
 Algorithm Flow:
-    - set_difficulty() called with player's chosen difficulty
-    - PreProcessing.__init__() loads profanity list and opens dictionary
-    - Each word checked against length bounds, profanity set, and Zipf threshold
-    - Qualifying words inserted into _Trie
-    - WordValidator.trie updated to point at the new _Trie
-    - DFS and other algorithms query shared_validator for word/prefix lookups
+    - shared_validator built once at module load with full unfiltered dictionary
+    - PreProcessing built per game with banded difficulty thresholds (used only by boardGen)
+    - DFS and gameplay word checks use shared_validator
+    - boardGen uses PreProcessing.trie to count difficulty-band words during generation
 """
 
 class _TrieNode:
@@ -133,8 +132,9 @@ class PreProcessing:
 
     def __init__(self, difficulty, dictionary_path='data/enable1.txt', profanity_path='data/profanity_wordlist.txt'):
         self.trie = _Trie()
-        low, high = self.DIFFICULTY_THRESHOLDS[difficulty]
+        low, high = self.DIFFICULTY_THRESHOLDS[difficulty]  # unpack the frequency band for this difficulty
 
+        # Load profanity list into a set for fast O(1) lookup during filtering
         banned = set()
         if os.path.exists(profanity_path):
             with open(profanity_path, 'r') as f:
@@ -145,9 +145,11 @@ class PreProcessing:
         with open(dictionary_path, 'r') as f:
             for line in f:
                 word = line.strip()
+                # Skip words that are too short, too long, or banned
                 if len(word) < 3 or len(word) > 16 or word.lower() in banned:
                     continue
                 frequency = zipf_frequency(word, 'en')
+                # Only insert words that fall within this difficulty's frequency band
                 if low < frequency <= high:
                     self.trie.insert(word)
                     word_count += 1

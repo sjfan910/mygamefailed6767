@@ -16,18 +16,20 @@ Key Methods:
 class MergeSort:
     @staticmethod
     def sort(lst):
-        # Recursive In Place Merge Sort of Time complexity O(nlog(n))
         n = len(lst)
         if n > 1:
-            m = n // 2  # divide the list in two sub lists
-            l1 = lst[:m]
-            l2 = lst[m:]
+            m = n // 2
+            l1 = lst[:m]  # left half
+            l2 = lst[m:]  # right half
 
+            # Recursively sort each half
             MergeSort.sort(l1)
             MergeSort.sort(l2)
 
+            # i tracks position in l1, j tracks position in l2, k tracks position in lst
             i = j = k = 0
 
+            # Merge: pick the smaller element from l1 or l2 each step
             while i < len(l1) and j < len(l2):
                 if l1[i] <= l2[j]:
                     lst[k] = l1[i]
@@ -35,12 +37,15 @@ class MergeSort:
                 else:
                     lst[k] = l2[j]
                     j += 1
-                k = k + 1
+                k += 1
 
+            # Copy any remaining elements from l1
             while i < len(l1):
                 lst[k] = l1[i]
                 i += 1
                 k += 1
+
+            # Copy any remaining elements from l2
             while j < len(l2):
                 lst[k] = l2[j]
                 j += 1

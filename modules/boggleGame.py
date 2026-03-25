@@ -10,7 +10,7 @@ from modules.aiHelper import AIHelper
 from css.boggleGamecss import *
 
 
-class TileButton(QPushButton):
+class _TileButton(QPushButton):
     def __init__(self, letter, row, col):
         super().__init__(letter)
         self.row = row
@@ -43,7 +43,7 @@ class TileButton(QPushButton):
         self.setStyleSheet(flashStyle.format(color=color, border_color=border_color))
 
 
-class EndGameDialog(QDialog):
+class _EndGameDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("End Game?")
@@ -127,7 +127,7 @@ class BoggleGame(QWidget):
         end_game_btn = QPushButton('End Game')
         end_game_btn.setFixedSize(120, 40)
         end_game_btn.setStyleSheet(endbuttonStyle)
-        end_game_btn.clicked.connect(self.confirm_end_game)
+        end_game_btn.clicked.connect(self.__confirm_end_game)
 
         top_bar.addWidget(self.timer_label)
         top_bar.addStretch()
@@ -201,7 +201,7 @@ class BoggleGame(QWidget):
             tile_row = []
             for col in range(self.grid_size):
                 letter = self.board_letters[row][col]
-                tile = TileButton(letter, row, col)
+                tile = _TileButton(letter, row, col)
                 # Use a helper to capture the correct row/col for each tile
                 def make_handler(r, c):
                     return lambda: self.__start_selection(r, c)
@@ -273,12 +273,12 @@ class BoggleGame(QWidget):
                 self.ai_cooldown_timer.stop()
                 self.ai_cooldown_timer = None
 
-    def confirm_end_game(self):
+    def __confirm_end_game(self):
         if hasattr(self, 'timer'):
             self.timer.stop()
         if self.ai_cooldown_timer:
             self.ai_cooldown_timer.stop()
-        dialog = EndGameDialog(self)
+        dialog = _EndGameDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             self.__end_game()
         else:
@@ -358,7 +358,7 @@ class BoggleGame(QWidget):
             return
         pos = event.pos()
         widget = self.childAt(pos)
-        if isinstance(widget, TileButton):
+        if isinstance(widget, _TileButton):
             self.__add_to_selection(widget.row, widget.col)
 
     def mouseReleaseEvent(self, event):

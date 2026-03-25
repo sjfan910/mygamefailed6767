@@ -7,7 +7,7 @@ from css.analyticsWindowcss import *
 from modules.mergeSort import MergeSort
 
 
-class DeleteGameDialog(QDialog):
+class _DeleteGameDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Confirm Delete")
@@ -192,7 +192,7 @@ class AnalyticsWindow(QWidget):
             self.__show_error_message(f"Failed to save game: {str(e)}")
 
     def delete_game(self):
-        dialog = DeleteGameDialog(self)
+        dialog = _DeleteGameDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             self.__show_success_message("Game deleted!")
             QTimer.singleShot(1000, self.return_to_menu)
